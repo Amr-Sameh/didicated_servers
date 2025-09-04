@@ -123,6 +123,11 @@ EOF
     # Run steamcmd to install Palworld
     cd "$STEAMCMD_DIR"
     sudo -u "$PALWORLD_USER" ./steamcmd.sh +runscript install_palworld.txt
+    
+    # Ensure proper permissions on server directory
+    log "Setting proper permissions on server directory..."
+    sudo chown -R "$PALWORLD_USER:$PALWORLD_USER" "$SERVER_DIR"
+    sudo chmod -R 755 "$SERVER_DIR"
 }
 
 # Create server configuration
@@ -233,8 +238,8 @@ StandardError=journal
 # Security settings
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
+ProtectSystem=false
+ProtectHome=false
 ReadWritePaths=$SERVER_DIR
 ProtectKernelTunables=true
 ProtectKernelModules=true
