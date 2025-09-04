@@ -6,10 +6,15 @@ This repository contains scripts to easily set up and manage a Palworld dedicate
 
 - `palworld-server-setup.sh` - Main installation script
 - `palworld-configure.sh` - Server configuration management script
+- `palworld-server.conf` - Default server configuration template
+- `palworld-server.conf.example` - Example configuration with custom values
+- `fix-permissions.sh` - Permission fix script
+- `diagnose.sh` - Diagnostic script
 - `README.md` - This documentation
 
 ## Quick Start
 
+### Option 1: Use Default Configuration
 1. **Download the scripts:**
    ```bash
    wget https://raw.githubusercontent.com/your-repo/palworld-server-setup.sh
@@ -23,6 +28,33 @@ This repository contains scripts to easily set up and manage a Palworld dedicate
    ```
 
 3. **Start the server:**
+   ```bash
+   palworld-server start
+   ```
+
+### Option 2: Custom Configuration (Recommended)
+1. **Download the scripts:**
+   ```bash
+   wget https://raw.githubusercontent.com/your-repo/palworld-server-setup.sh
+   wget https://raw.githubusercontent.com/your-repo/palworld-configure.sh
+   chmod +x palworld-server-setup.sh palworld-configure.sh
+   ```
+
+2. **Configure your server:**
+   ```bash
+   # Copy the example configuration
+   cp palworld-server.conf.example palworld-server.conf
+   
+   # Edit with your preferred settings
+   nano palworld-server.conf
+   ```
+
+3. **Run the setup script:**
+   ```bash
+   ./palworld-server-setup.sh
+   ```
+
+4. **Start the server:**
    ```bash
    palworld-server start
    ```
@@ -81,7 +113,30 @@ palworld-server backup
 
 ## Configuration
 
-Use the configuration script to modify server settings:
+### Pre-Setup Configuration (Recommended)
+
+Edit the configuration file before running the setup script:
+
+```bash
+# Copy the example configuration
+cp palworld-server.conf.example palworld-server.conf
+
+# Edit with your preferred settings
+nano palworld-server.conf
+```
+
+**Key settings you can configure:**
+- Server name and description
+- Server password and admin password
+- Player count and port settings
+- Game difficulty and rates (XP, capture, damage, etc.)
+- PvP and building settings
+- Base camp and guild settings
+- RCON and authentication settings
+
+### Post-Setup Configuration
+
+Use the configuration script to modify server settings after installation:
 
 ```bash
 # Interactive configuration

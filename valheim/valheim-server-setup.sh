@@ -12,7 +12,22 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration variables
+# Configuration file path
+CONFIG_FILE="$(dirname "$0")/valheim-server.conf"
+
+# Load configuration from file
+load_config() {
+    if [ -f "$CONFIG_FILE" ]; then
+        log "Loading configuration from $CONFIG_FILE"
+        # Source the config file
+        source "$CONFIG_FILE"
+    else
+        warning "Configuration file not found: $CONFIG_FILE"
+        warning "Using default values. You can create a config file by copying valheim-server.conf.example"
+    fi
+}
+
+# Configuration variables (defaults - will be overridden by config file)
 VALHEIM_USER="valheim"
 VALHEIM_HOME="/home/$VALHEIM_USER"
 STEAMCMD_DIR="$VALHEIM_HOME/steamcmd"
@@ -298,6 +313,9 @@ main() {
     
     check_root
     check_sudo
+    
+    # Load configuration
+    load_config
     
     log "Starting Valheim server installation..."
     

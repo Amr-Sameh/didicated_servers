@@ -6,10 +6,13 @@ This repository contains scripts to easily set up and manage a Valheim dedicated
 
 - `valheim-server-setup.sh` - Main installation script
 - `valheim-configure.sh` - Server configuration management script
+- `valheim-server.conf` - Default server configuration template
+- `valheim-server.conf.example` - Example configuration with custom values
 - `README.md` - This documentation
 
 ## Quick Start
 
+### Option 1: Use Default Configuration
 1. **Download the scripts:**
    ```bash
    wget https://raw.githubusercontent.com/your-repo/valheim-server-setup.sh
@@ -23,6 +26,33 @@ This repository contains scripts to easily set up and manage a Valheim dedicated
    ```
 
 3. **Start the server:**
+   ```bash
+   valheim-server start
+   ```
+
+### Option 2: Custom Configuration (Recommended)
+1. **Download the scripts:**
+   ```bash
+   wget https://raw.githubusercontent.com/your-repo/valheim-server-setup.sh
+   wget https://raw.githubusercontent.com/your-repo/valheim-configure.sh
+   chmod +x valheim-server-setup.sh valheim-configure.sh
+   ```
+
+2. **Configure your server:**
+   ```bash
+   # Copy the example configuration
+   cp valheim-server.conf.example valheim-server.conf
+   
+   # Edit with your preferred settings
+   nano valheim-server.conf
+   ```
+
+3. **Run the setup script:**
+   ```bash
+   ./valheim-server-setup.sh
+   ```
+
+4. **Start the server:**
    ```bash
    valheim-server start
    ```
@@ -81,7 +111,30 @@ valheim-server backup
 
 ## Configuration
 
-Use the configuration script to modify server settings:
+### Pre-Setup Configuration (Recommended)
+
+Edit the configuration file before running the setup script:
+
+```bash
+# Copy the example configuration
+cp valheim-server.conf.example valheim-server.conf
+
+# Edit with your preferred settings
+nano valheim-server.conf
+```
+
+**Key settings you can configure:**
+- Server name and password
+- World name and port settings
+- Public/private server options
+- Valheim Plus support
+- Backup and monitoring settings
+- Logging configuration
+- Firewall settings
+
+### Post-Setup Configuration
+
+Use the configuration script to modify server settings after installation:
 
 ```bash
 # Interactive configuration

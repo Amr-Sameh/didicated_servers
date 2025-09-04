@@ -12,7 +12,22 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration variables
+# Configuration file path
+CONFIG_FILE="$(dirname "$0")/palworld-server.conf"
+
+# Load configuration from file
+load_config() {
+    if [ -f "$CONFIG_FILE" ]; then
+        log "Loading configuration from $CONFIG_FILE"
+        # Source the config file
+        source "$CONFIG_FILE"
+    else
+        warning "Configuration file not found: $CONFIG_FILE"
+        warning "Using default values. You can create a config file by copying palworld-server.conf.example"
+    fi
+}
+
+# Configuration variables (defaults - will be overridden by config file)
 PALWORLD_USER="palworld"
 PALWORLD_HOME="/home/$PALWORLD_USER"
 STEAMCMD_DIR="$PALWORLD_HOME/steamcmd"
@@ -143,64 +158,64 @@ create_server_config() {
     sudo -u "$PALWORLD_USER" tee "$SERVER_DIR/Pal/Saved/Config/LinuxServer/PalWorldSettings.ini" > /dev/null << EOF
 [/Script/Pal.PalGameWorldSettings]
 OptionSettings=(
-    Difficulty=None,
-    DayTimeSpeedRate=1.000000,
-    NightTimeSpeedRate=1.000000,
-    ExpRate=1.000000,
-    PalCaptureRate=1.000000,
-    PalSpawnNumRate=1.000000,
-    PalDamageRateAttack=1.000000,
-    PalDamageRateDefense=1.000000,
-    PlayerDamageRateAttack=1.000000,
-    PlayerDamageRateDefense=1.000000,
+    Difficulty=$DIFFICULTY,
+    DayTimeSpeedRate=$DAY_TIME_SPEED_RATE,
+    NightTimeSpeedRate=$NIGHT_TIME_SPEED_RATE,
+    ExpRate=$EXP_RATE,
+    PalCaptureRate=$PAL_CAPTURE_RATE,
+    PalSpawnNumRate=$PAL_SPAWN_RATE,
+    PalDamageRateAttack=$PAL_DAMAGE_RATE_ATTACK,
+    PalDamageRateDefense=$PAL_DAMAGE_RATE_DEFENSE,
+    PlayerDamageRateAttack=$PLAYER_DAMAGE_RATE_ATTACK,
+    PlayerDamageRateDefense=$PLAYER_DAMAGE_RATE_DEFENSE,
     PlayerAutoHpRegeneRate=1.000000,
     PlayerAutoHpRegeneRateInSleep=1.000000,
     PalAutoHpRegeneRate=1.000000,
     PalAutoHpRegeneRateInSleep=1.000000,
-    BuildObjectDeteriorationDamageRate=1.000000,
-    BuildObjectDeteriorationRate=1.000000,
-    BuildObjectHpRate=1.000000,
-    BuildObjectDeteriorationRate=1.000000,
-    CollectionDropRate=1.000000,
-    CollectionObjectHpRate=1.000000,
-    CollectionObjectRate=1.000000,
-    EnemyDropItemRate=1.000000,
-    DeathPenalty=All,
-    bEnablePlayerToPlayerDamage=False,
-    bEnableFriendlyFire=False,
-    bEnableInvaderEnemy=True,
+    BuildObjectDeteriorationDamageRate=$BUILD_DETERIORATION_DAMAGE_RATE,
+    BuildObjectDeteriorationRate=$BUILD_DETERIORATION_RATE,
+    BuildObjectHpRate=$BUILD_OBJECT_HP_RATE,
+    BuildObjectDeteriorationRate=$BUILD_DETERIORATION_RATE,
+    CollectionDropRate=$COLLECTION_DROP_RATE,
+    CollectionObjectHpRate=$COLLECTION_OBJECT_HP_RATE,
+    CollectionObjectRate=$COLLECTION_OBJECT_RATE,
+    EnemyDropItemRate=$ENEMY_DROP_ITEM_RATE,
+    DeathPenalty=$DEATH_PENALTY,
+    bEnablePlayerToPlayerDamage=$ENABLE_PVP,
+    bEnableFriendlyFire=$ENABLE_FRIENDLY_FIRE,
+    bEnableInvaderEnemy=$ENABLE_INVADER_ENEMY,
     bActiveUNKO=False,
     bEnableAimAssistPad=True,
     bEnableAimAssistKeyboard=False,
     DropItemMaxNum=3000,
     DropItemMaxNum_UNKO=100,
-    BaseCampMaxNum=128,
-    BaseCampMaxNumInGuild=1,
-    BaseCampWorkerMaxNum=15,
-    GuildPlayerMaxNum=20,
+    BaseCampMaxNum=$BASE_CAMP_MAX_NUM,
+    BaseCampMaxNumInGuild=$BASE_CAMP_MAX_NUM_IN_GUILD,
+    BaseCampWorkerMaxNum=$BASE_CAMP_WORKER_MAX_NUM,
+    GuildPlayerMaxNum=$GUILD_PLAYER_MAX_NUM,
     PalEggDefaultHatchingTime=72.000000,
-    WorkSpeedRate=1.000000,
-    bIsMultiplay=False,
-    bIsPvP=False,
+    WorkSpeedRate=$WORK_SPEED_RATE,
+    bIsMultiplay=$ENABLE_MULTIPLAY,
+    bIsPvP=$ENABLE_PVP,
     bCanPickupOtherGuildDeathPenaltyDrop=False,
-    bEnableNonLoginPenalty=True,
-    bEnableFastTravel=True,
+    bEnableNonLoginPenalty=$ENABLE_NON_LOGIN_PENALTY,
+    bEnableFastTravel=$ENABLE_FAST_TRAVEL,
     bIsStartLocationSelectByMap=True,
     bExistPlayerAfterLogout=False,
     bEnableDefenseOtherGuildPlayer=False,
     CoopPlayerMaxNum=4,
-    ServerPlayerMaxNum=32,
+    ServerPlayerMaxNum=$PLAYER_COUNT,
     ServerName="$SERVER_NAME",
     ServerDescription="$SERVER_DESCRIPTION",
     AdminPassword="$ADMIN_PASSWORD",
     ServerPassword="$SERVER_PASSWORD",
     PublicPort=$PORT,
     PublicIP="",
-    RCONEnabled=True,
-    RCONPort=25575,
+    RCONEnabled=$RCON_ENABLED,
+    RCONPort=$RCON_PORT,
     Region="",
-    bUseAuth=True,
-    BanListURL="https://api.palworldgame.com/api/banlist.txt"
+    bUseAuth=$USE_AUTH,
+    BanListURL="$BAN_LIST_URL"
 )
 EOF
 
@@ -336,6 +351,9 @@ main() {
     
     check_root
     check_sudo
+    
+    # Load configuration
+    load_config
     
     log "Starting Palworld server installation..."
     
