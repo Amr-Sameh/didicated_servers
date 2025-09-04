@@ -71,7 +71,16 @@ install_dependencies() {
 
 # Create palworld user
 create_user() {
-    if ! id "$PALWORLD_USER" &>/dev/null; then
+    if id "$PALWORLD_USER" &>/dev/null; then
+        log "User $PALWORLD_USER already exists"
+        # Ensure user is in sudo group
+        if ! groups "$PALWORLD_USER" | grep -q sudo; then
+            log "Adding $PALWORLD_USER to sudo group..."
+            sudo usermod -aG sudo "$PALWORLD_USER" || {
+                warning "Failed to add $PALWORLD_USER to sudo group, but continuing..."
+            }
+        fi
+    else
         log "Creating palworld user..."
         if ! sudo useradd -m -s /bin/bash "$PALWORLD_USER"; then
             error "Failed to create user $PALWORLD_USER"
@@ -80,8 +89,6 @@ create_user() {
         if ! sudo usermod -aG sudo "$PALWORLD_USER"; then
             warning "Failed to add $PALWORLD_USER to sudo group, but continuing..."
         fi
-    else
-        log "User $PALWORLD_USER already exists"
     fi
 }
 
