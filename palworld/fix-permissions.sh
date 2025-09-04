@@ -17,12 +17,17 @@ sudo systemctl stop palworld-server 2>/dev/null || true
 
 # Ensure palworld user exists and has proper permissions
 echo "Ensuring palworld user exists..."
-if ! id "$PALWORLD_USER" &>/dev/null; then
+if id "$PALWORLD_USER" &>/dev/null; then
+    echo "User $PALWORLD_USER already exists"
+    # Ensure user is in sudo group
+    if ! groups "$PALWORLD_USER" | grep -q sudo; then
+        echo "Adding $PALWORLD_USER to sudo group..."
+        sudo usermod -aG sudo "$PALWORLD_USER"
+    fi
+else
     echo "Creating palworld user..."
     sudo useradd -m -s /bin/bash "$PALWORLD_USER"
     sudo usermod -aG sudo "$PALWORLD_USER"
-else
-    echo "User $PALWORLD_USER already exists"
 fi
 
 # Create server directory if it doesn't exist
