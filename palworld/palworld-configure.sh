@@ -40,6 +40,14 @@ check_config() {
         error "Please run the main setup script first: ./palworld-server-setup.sh"
         exit 1
     fi
+    
+    # Ensure the directory structure exists
+    CONFIG_DIR=$(dirname "$CONFIG_FILE")
+    if [ ! -d "$CONFIG_DIR" ]; then
+        error "Configuration directory not found: $CONFIG_DIR"
+        error "Please run the main setup script first: ./palworld-server-setup.sh"
+        exit 1
+    fi
 }
 
 # Interactive configuration

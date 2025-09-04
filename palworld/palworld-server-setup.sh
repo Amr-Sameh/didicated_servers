@@ -117,6 +117,11 @@ EOF
 create_server_config() {
     log "Creating server configuration..."
     
+    # Create necessary directories
+    sudo -u "$PALWORLD_USER" mkdir -p "$SERVER_DIR/Pal/Saved/Config/LinuxServer"
+    sudo -u "$PALWORLD_USER" mkdir -p "$SERVER_DIR/Pal/Saved/SaveGames"
+    sudo -u "$PALWORLD_USER" mkdir -p "$SERVER_DIR/Pal/Saved/Logs"
+    
     # Create PalWorldSettings.ini
     sudo -u "$PALWORLD_USER" tee "$SERVER_DIR/Pal/Saved/Config/LinuxServer/PalWorldSettings.ini" > /dev/null << EOF
 [/Script/Pal.PalGameWorldSettings]
