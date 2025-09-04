@@ -158,7 +158,7 @@ create_server_config() {
 #!/bin/bash
 cd "$(dirname "$0")"
 
-# Set server parameters
+# Set server parameters from environment or defaults
 SERVER_NAME="${SERVER_NAME:-Valheim Server}"
 SERVER_PASSWORD="${SERVER_PASSWORD:-}"
 SERVER_WORLD="${SERVER_WORLD:-Dedicated}"
@@ -166,16 +166,55 @@ SERVER_PUBLIC="${SERVER_PUBLIC:-false}"
 SERVER_PORT="${SERVER_PORT:-2456}"
 SERVER_QUERY_PORT="${SERVER_QUERY_PORT:-2457}"
 SERVER_PLUS="${SERVER_PLUS:-false}"
+SERVER_DESCRIPTION="${SERVER_DESCRIPTION:-A Valheim dedicated server}"
+MAX_PLAYERS="${MAX_PLAYERS:-10}"
+ENABLE_CROSSPLAY="${ENABLE_CROSSPLAY:-false}"
+SERVER_COMMUNITY="${SERVER_COMMUNITY:-0}"
+ENABLE_SERVER_LIST_PING="${ENABLE_SERVER_LIST_PING:-true}"
+SERVER_DATA_PATH="${SERVER_DATA_PATH:-./saves}"
+LOG_FILE_PATH="${LOG_FILE_PATH:-./logs/valheim_server.log}"
+DEATH_PENALTY="${DEATH_PENALTY:-1}"
+RESOURCE_RATE="${RESOURCE_RATE:-1.0}"
+DROP_RATE="${DROP_RATE:-1.0}"
+CRAFT_COST="${CRAFT_COST:-1.0}"
+REPAIR_COST="${REPAIR_COST:-1.0}"
+WORLD_SIZE="${WORLD_SIZE:-1}"
+ENABLE_PVP="${ENABLE_PVP:-false}"
+ENABLE_CONSOLE="${ENABLE_CONSOLE:-false}"
+ENABLE_DEBUG="${ENABLE_DEBUG:-false}"
 
 # Build command line arguments
 ARGS="-name \"$SERVER_NAME\" -port $SERVER_PORT -world $SERVER_WORLD -password \"$SERVER_PASSWORD\" -public $SERVER_PUBLIC"
 
-if [ "$SERVER_PLUS" = "true" ]; then
+# Add optional parameters
+if [ "$ENABLE_CROSSPLAY" = "true" ] || [ "$SERVER_PLUS" = "true" ]; then
     ARGS="$ARGS -crossplay"
+fi
+
+if [ "$ENABLE_CONSOLE" = "true" ]; then
+    ARGS="$ARGS -console"
+fi
+
+if [ "$ENABLE_DEBUG" = "true" ]; then
+    ARGS="$ARGS -debug"
+fi
+
+# Add server description if provided
+if [ -n "$SERVER_DESCRIPTION" ]; then
+    ARGS="$ARGS -description \"$SERVER_DESCRIPTION\""
 fi
 
 # Start the server
 echo "Starting Valheim server with: $ARGS"
+echo "Server settings:"
+echo "  Name: $SERVER_NAME"
+echo "  World: $SERVER_WORLD"
+echo "  Port: $SERVER_PORT"
+echo "  Max Players: $MAX_PLAYERS"
+echo "  Public: $SERVER_PUBLIC"
+echo "  PvP: $ENABLE_PVP"
+echo "  Crossplay: $ENABLE_CROSSPLAY"
+
 exec ./valheim_server.x86_64 $ARGS
 EOF
 
@@ -211,6 +250,22 @@ Environment=SERVER_PUBLIC="$SERVER_PUBLIC"
 Environment=SERVER_PORT="$SERVER_PORT"
 Environment=SERVER_QUERY_PORT="$SERVER_QUERY_PORT"
 Environment=SERVER_PLUS="$SERVER_PLUS"
+Environment=SERVER_DESCRIPTION="$SERVER_DESCRIPTION"
+Environment=MAX_PLAYERS="$MAX_PLAYERS"
+Environment=ENABLE_CROSSPLAY="$ENABLE_CROSSPLAY"
+Environment=SERVER_COMMUNITY="$SERVER_COMMUNITY"
+Environment=ENABLE_SERVER_LIST_PING="$ENABLE_SERVER_LIST_PING"
+Environment=SERVER_DATA_PATH="$SERVER_DATA_PATH"
+Environment=LOG_FILE_PATH="$LOG_FILE_PATH"
+Environment=DEATH_PENALTY="$DEATH_PENALTY"
+Environment=RESOURCE_RATE="$RESOURCE_RATE"
+Environment=DROP_RATE="$DROP_RATE"
+Environment=CRAFT_COST="$CRAFT_COST"
+Environment=REPAIR_COST="$REPAIR_COST"
+Environment=WORLD_SIZE="$WORLD_SIZE"
+Environment=ENABLE_PVP="$ENABLE_PVP"
+Environment=ENABLE_CONSOLE="$ENABLE_CONSOLE"
+Environment=ENABLE_DEBUG="$ENABLE_DEBUG"
 
 # Security settings (relaxed for Valheim)
 NoNewPrivileges=true

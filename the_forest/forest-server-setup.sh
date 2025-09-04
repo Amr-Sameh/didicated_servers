@@ -1,0 +1,473 @@
+#!/bin/bash
+
+# The Forest Dedicated Server Setup Script
+# This script installs and configures a The Forest dedicated server on Ubuntu
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration file path
+CONFIG_FILE="$(dirname "$0")/forest-server.conf"
+
+# Load configuration from file
+load_config() {
+    if [ -f "$CONFIG_FILE" ]; then
+        log "Loading configuration from $CONFIG_FILE"
+        source "$CONFIG_FILE"
+    else
+        warning "Configuration file not found: $CONFIG_FILE"
+        warning "Using default values. You can create a config file by copying forest-server.conf.example"
+    fi
+}
+
+# Configuration variables (defaults - will be overridden by config file)
+FOREST_USER="forest"
+FOREST_HOME="/home/$FOREST_USER"
+STEAMCMD_DIR="$FOREST_HOME/steamcmd"
+SERVER_DIR="$FOREST_HOME/forest-server"
+SERVICE_NAME="forest-server"
+STEAM_APP_ID="556450"
+
+# Server configuration defaults
+SERVER_NAME="The Forest Server"
+SERVER_PASSWORD=""
+SERVER_SLOTS="8"
+SERVER_PORT="27015"
+ENABLE_VAC="true"
+SAVE_SLOT="1"
+SAVE_MODE="Continue"
+SAVE_INTERVAL="600"
+TARGET_FPS_IDLE="5"
+TARGET_FPS_ACTIVE="60"
+ENABLE_AUTOSAVE_ON_SLEEP="false"
+SKIP_NETWORKING_TUTORIAL="true"
+ENABLE_TREE_REGROWTH="true"
+TREE_REGROWTH_MODE="1"
+CUSTOM_GAME_MODE_MASK="0"
+INIT_TYPE="New"
+SLOT="1"
+SHOW_LOGS="false"
+SERVER_CONTACT=""
+SERVER_DESCRIPTION=""
+SERVER_TAGS=""
+GAME_MODE="Standard"
+DIFFICULTY="Normal"
+INIT_TYPE="New"
+
+# Logging function
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+# Check if running as root
+check_root() {
+    if [[ $EUID -eq 0 ]]; then
+        error "This script should not be run as root. Please run as a regular user with sudo privileges."
+        exit 1
+    fi
+}
+
+# Check if user has sudo privileges
+check_sudo() {
+    if ! sudo -n true 2>/dev/null; then
+        error "This script requires sudo privileges. Please run: sudo visudo and add your user to sudoers."
+        exit 1
+    fi
+}
+
+# Install required packages
+install_dependencies() {
+    log "Installing required packages..."
+    sudo apt update
+    sudo apt install -y curl wget lib32gcc-s1 lib32stdc++6 libc6-i386 xvfb
+}
+
+# Create forest user
+create_user() {
+    if id "$FOREST_USER" &>/dev/null; then
+        log "User $FOREST_USER already exists"
+        # Ensure user is in sudo group
+        if ! groups "$FOREST_USER" | grep -q sudo; then
+            log "Adding $FOREST_USER to sudo group..."
+            sudo usermod -aG sudo "$FOREST_USER" || {
+                warning "Failed to add $FOREST_USER to sudo group, but continuing..."
+            }
+        fi
+    else
+        log "Creating forest user..."
+        if ! sudo useradd -m -s /bin/bash "$FOREST_USER"; then
+            error "Failed to create user $FOREST_USER"
+            exit 1
+        fi
+        if ! sudo usermod -aG sudo "$FOREST_USER"; then
+            warning "Failed to add $FOREST_USER to sudo group, but continuing..."
+        fi
+    fi
+}
+
+# Install SteamCMD
+install_steamcmd() {
+    log "Installing SteamCMD..."
+    sudo -u "$FOREST_USER" mkdir -p "$STEAMCMD_DIR"
+    cd "$STEAMCMD_DIR"
+    
+    if [ ! -f "steamcmd.sh" ]; then
+        sudo -u "$FOREST_USER" wget -qO- "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | sudo -u "$FOREST_USER" tar zxf -
+    else
+        log "SteamCMD already installed"
+    fi
+}
+
+# Install The Forest server
+install_forest_server() {
+    log "Installing The Forest server..."
+    sudo -u "$FOREST_USER" mkdir -p "$SERVER_DIR"
+    
+    # Create steamcmd script for The Forest
+    sudo -u "$FOREST_USER" tee "$STEAMCMD_DIR/install_forest.txt" > /dev/null << EOF
+@ShutdownOnFailedCommand 1
+@NoPromptForPassword 1
+force_install_dir $SERVER_DIR
+login anonymous
+app_update $STEAM_APP_ID validate
+quit
+EOF
+
+    # Run steamcmd to install The Forest
+    cd "$STEAMCMD_DIR"
+    sudo -u "$FOREST_USER" ./steamcmd.sh +runscript install_forest.txt
+    
+    # Ensure proper permissions on server directory
+    log "Setting proper permissions on server directory..."
+    sudo chown -R "$FOREST_USER:$FOREST_USER" "$SERVER_DIR"
+    sudo chmod -R 755 "$SERVER_DIR"
+}
+
+# Create server configuration
+create_server_config() {
+    log "Creating server configuration..."
+    
+    # Create necessary directories
+    sudo -u "$FOREST_USER" mkdir -p "$SERVER_DIR/config"
+    sudo -u "$FOREST_USER" mkdir -p "$SERVER_DIR/saves"
+    sudo -u "$FOREST_USER" mkdir -p "$SERVER_DIR/logs"
+    
+    # Create server config file
+    sudo -u "$FOREST_USER" tee "$SERVER_DIR/config/config.cfg" > /dev/null << EOF
+//
+// Server configuration for The Forest Dedicated Server
+// Generated by forest-server-setup.sh
+//
+
+// Basic server settings
+serverIP 0.0.0.0
+serverSteamPort $SERVER_PORT
+serverGamePort $((SERVER_PORT + 1))
+serverQueryPort $((SERVER_PORT + 2))
+serverName $SERVER_NAME
+serverPlayers $SERVER_SLOTS
+enableVAC $ENABLE_VAC
+serverPassword $SERVER_PASSWORD
+serverPasswordAdmin 
+
+// Save settings
+saveSlot $SAVE_SLOT
+saveMode $SAVE_MODE
+saveInterval $SAVE_INTERVAL
+
+// Performance settings
+targetFpsIdle $TARGET_FPS_IDLE
+targetFpsActive $TARGET_FPS_ACTIVE
+
+// Game settings
+enableAutosaveOnSleep $ENABLE_AUTOSAVE_ON_SLEEP
+skipNetworkingTutorial $SKIP_NETWORKING_TUTORIAL
+enableTreeRegrowth $ENABLE_TREE_REGROWTH
+treeRegrowthMode $TREE_REGROWTH_MODE
+customGameModeSettings $CUSTOM_GAME_MODE_MASK
+
+// Server info
+serverContact $SERVER_CONTACT
+serverDescription $SERVER_DESCRIPTION
+serverTags $SERVER_TAGS
+
+// Logging
+showLogs $SHOW_LOGS
+EOF
+
+    # Create server startup script
+    sudo -u "$FOREST_USER" tee "$SERVER_DIR/start-server.sh" > /dev/null << 'EOF'
+#!/bin/bash
+cd "$(dirname "$0")"
+
+# Set server parameters from environment or defaults
+SERVER_NAME="${SERVER_NAME:-The Forest Server}"
+SERVER_PASSWORD="${SERVER_PASSWORD:-}"
+SERVER_SLOTS="${SERVER_SLOTS:-8}"
+SERVER_PORT="${SERVER_PORT:-27015}"
+ENABLE_VAC="${ENABLE_VAC:-true}"
+SAVE_SLOT="${SAVE_SLOT:-1}"
+SAVE_MODE="${SAVE_MODE:-Continue}"
+SAVE_INTERVAL="${SAVE_INTERVAL:-600}"
+TARGET_FPS_IDLE="${TARGET_FPS_IDLE:-5}"
+TARGET_FPS_ACTIVE="${TARGET_FPS_ACTIVE:-60}"
+ENABLE_AUTOSAVE_ON_SLEEP="${ENABLE_AUTOSAVE_ON_SLEEP:-false}"
+SKIP_NETWORKING_TUTORIAL="${SKIP_NETWORKING_TUTORIAL:-true}"
+ENABLE_TREE_REGROWTH="${ENABLE_TREE_REGROWTH:-true}"
+TREE_REGROWTH_MODE="${TREE_REGROWTH_MODE:-1}"
+CUSTOM_GAME_MODE_MASK="${CUSTOM_GAME_MODE_MASK:-0}"
+INIT_TYPE="${INIT_TYPE:-New}"
+SLOT="${SLOT:-1}"
+SHOW_LOGS="${SHOW_LOGS:-false}"
+SERVER_CONTACT="${SERVER_CONTACT:-}"
+SERVER_DESCRIPTION="${SERVER_DESCRIPTION:-}"
+SERVER_TAGS="${SERVER_TAGS:-}"
+GAME_MODE="${GAME_MODE:-Standard}"
+DIFFICULTY="${DIFFICULTY:-Normal}"
+
+echo "Starting The Forest server..."
+echo "Server settings:"
+echo "  Name: $SERVER_NAME"
+echo "  Slots: $SERVER_SLOTS"
+echo "  Port: $SERVER_PORT"
+echo "  VAC: $ENABLE_VAC"
+echo "  Save Slot: $SAVE_SLOT"
+echo "  Game Mode: $GAME_MODE"
+echo "  Difficulty: $DIFFICULTY"
+
+# Start with virtual display (required for headless operation)
+export DISPLAY=:0
+Xvfb :0 -screen 0 1024x768x16 &
+XVFB_PID=$!
+
+# Function to cleanup on exit
+cleanup() {
+    echo "Shutting down server..."
+    if [ ! -z "$XVFB_PID" ]; then
+        kill $XVFB_PID 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
+# Start the server
+exec ./TheForestDedicatedServer.exe \
+    -batchmode \
+    -nographics \
+    -dedicated \
+    -configfilepath ./config/config.cfg \
+    -savefolderpath ./saves \
+    -logFilePath ./logs/server.log
+EOF
+
+    sudo chmod +x "$SERVER_DIR/start-server.sh"
+    sudo chown -R "$FOREST_USER:$FOREST_USER" "$SERVER_DIR"
+}
+
+# Create systemd service
+create_systemd_service() {
+    log "Creating systemd service..."
+    
+    sudo tee "/etc/systemd/system/$SERVICE_NAME.service" > /dev/null << EOF
+[Unit]
+Description=The Forest Dedicated Server
+After=network.target
+
+[Service]
+Type=simple
+User=$FOREST_USER
+Group=$FOREST_USER
+WorkingDirectory=$SERVER_DIR
+ExecStart=$SERVER_DIR/start-server.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables for server configuration
+Environment=SERVER_NAME="$SERVER_NAME"
+Environment=SERVER_PASSWORD="$SERVER_PASSWORD"
+Environment=SERVER_SLOTS="$SERVER_SLOTS"
+Environment=SERVER_PORT="$SERVER_PORT"
+Environment=ENABLE_VAC="$ENABLE_VAC"
+Environment=SAVE_SLOT="$SAVE_SLOT"
+Environment=SAVE_MODE="$SAVE_MODE"
+Environment=SAVE_INTERVAL="$SAVE_INTERVAL"
+Environment=TARGET_FPS_IDLE="$TARGET_FPS_IDLE"
+Environment=TARGET_FPS_ACTIVE="$TARGET_FPS_ACTIVE"
+Environment=ENABLE_AUTOSAVE_ON_SLEEP="$ENABLE_AUTOSAVE_ON_SLEEP"
+Environment=SKIP_NETWORKING_TUTORIAL="$SKIP_NETWORKING_TUTORIAL"
+Environment=ENABLE_TREE_REGROWTH="$ENABLE_TREE_REGROWTH"
+Environment=TREE_REGROWTH_MODE="$TREE_REGROWTH_MODE"
+Environment=CUSTOM_GAME_MODE_MASK="$CUSTOM_GAME_MODE_MASK"
+Environment=INIT_TYPE="$INIT_TYPE"
+Environment=SLOT="$SLOT"
+Environment=SHOW_LOGS="$SHOW_LOGS"
+Environment=SERVER_CONTACT="$SERVER_CONTACT"
+Environment=SERVER_DESCRIPTION="$SERVER_DESCRIPTION"
+Environment=SERVER_TAGS="$SERVER_TAGS"
+Environment=GAME_MODE="$GAME_MODE"
+Environment=DIFFICULTY="$DIFFICULTY"
+Environment=DISPLAY=:0
+
+# Security settings (relaxed for The Forest)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=false
+ProtectHome=false
+ReadWritePaths=$SERVER_DIR
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable "$SERVICE_NAME"
+}
+
+# Create management scripts
+create_management_scripts() {
+    log "Creating management scripts..."
+    
+    # Create server control script
+    sudo tee "/usr/local/bin/forest-server" > /dev/null << 'EOF'
+#!/bin/bash
+
+SERVICE_NAME="forest-server"
+
+case "$1" in
+    start)
+        echo "Starting The Forest server..."
+        sudo systemctl start "$SERVICE_NAME"
+        ;;
+    stop)
+        echo "Stopping The Forest server..."
+        sudo systemctl stop "$SERVICE_NAME"
+        ;;
+    restart)
+        echo "Restarting The Forest server..."
+        sudo systemctl restart "$SERVICE_NAME"
+        ;;
+    status)
+        sudo systemctl status "$SERVICE_NAME"
+        ;;
+    logs)
+        sudo journalctl -u "$SERVICE_NAME" -f
+        ;;
+    enable)
+        echo "Enabling The Forest server to start on boot..."
+        sudo systemctl enable "$SERVICE_NAME"
+        ;;
+    disable)
+        echo "Disabling The Forest server from starting on boot..."
+        sudo systemctl disable "$SERVICE_NAME"
+        ;;
+    update)
+        echo "Updating The Forest server..."
+        sudo -u forest /home/forest/steamcmd/steamcmd.sh +runscript /home/forest/steamcmd/install_forest.txt
+        sudo systemctl restart "$SERVICE_NAME"
+        ;;
+    backup)
+        echo "Creating backup..."
+        BACKUP_DIR="/home/forest/backups"
+        sudo -u forest mkdir -p "$BACKUP_DIR"
+        BACKUP_FILE="$BACKUP_DIR/forest-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+        sudo -u forest tar -czf "$BACKUP_FILE" -C /home/forest forest-server/saves
+        echo "Backup created: $BACKUP_FILE"
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status|logs|enable|disable|update|backup}"
+        exit 1
+        ;;
+esac
+EOF
+
+    sudo chmod +x "/usr/local/bin/forest-server"
+}
+
+# Configure firewall
+configure_firewall() {
+    log "Configuring firewall..."
+    
+    if command -v ufw &> /dev/null; then
+        sudo ufw allow $SERVER_PORT/udp
+        sudo ufw allow $((SERVER_PORT + 1))/udp
+        sudo ufw allow $((SERVER_PORT + 2))/udp
+        log "Firewall rules added for ports $SERVER_PORT, $((SERVER_PORT + 1)), and $((SERVER_PORT + 2)) (UDP)"
+    else
+        warning "UFW not found. Please manually open ports $SERVER_PORT, $((SERVER_PORT + 1)), and $((SERVER_PORT + 2)) (UDP) in your firewall."
+    fi
+}
+
+# Main installation function
+main() {
+    echo -e "${BLUE}"
+    echo "=========================================="
+    echo "  The Forest Dedicated Server Setup"
+    echo "=========================================="
+    echo -e "${NC}"
+    
+    check_root
+    check_sudo
+    
+    # Load configuration
+    load_config
+    
+    log "Starting The Forest server installation..."
+    
+    install_dependencies
+    create_user
+    install_steamcmd
+    install_forest_server
+    create_server_config
+    create_systemd_service
+    create_management_scripts
+    configure_firewall
+    
+    log "Installation completed successfully!"
+    echo
+    info "Server configuration:"
+    info "  Server Name: $SERVER_NAME"
+    info "  Server Port: $SERVER_PORT"
+    info "  Server Password: ${SERVER_PASSWORD:-"None"}"
+    info "  Max Players: $SERVER_SLOTS"
+    info "  Game Mode: $GAME_MODE"
+    info "  Difficulty: $DIFFICULTY"
+    echo
+    info "Management commands:"
+    info "  Start server:   forest-server start"
+    info "  Stop server:    forest-server stop"
+    info "  Restart server: forest-server restart"
+    info "  Check status:   forest-server status"
+    info "  View logs:      forest-server logs"
+    info "  Update server:  forest-server update"
+    info "  Backup save:    forest-server backup"
+    echo
+    warning "The Forest server requires a virtual display (Xvfb) to run headless."
+    warning "This has been configured automatically in the startup script."
+    echo
+    log "To start the server, run: forest-server start"
+}
+
+# Run main function
+main "$@"

@@ -1,0 +1,157 @@
+# The Forest Dedicated Server Configuration Example
+# Copy this file to forest-server.conf and edit the values
+# All values will be used during server setup
+
+# ===========================================
+# SERVER BASIC SETTINGS
+# ===========================================
+
+# Server display name (shown in server browser)
+SERVER_NAME="My Forest Survival Server"
+
+# Server password (leave empty for public server)
+SERVER_PASSWORD="myforestpass123"
+
+# Maximum number of players (1-8)
+SERVER_SLOTS="6"
+
+# Server port (default: 27015)
+SERVER_PORT="27015"
+
+# Enable VAC (Valve Anti-Cheat) (true/false)
+ENABLE_VAC="true"
+
+# ===========================================
+# SAVE & WORLD SETTINGS
+# ===========================================
+
+# Save slot (1-5)
+SAVE_SLOT="1"
+
+# Save mode (New, Continue, Load)
+SAVE_MODE="Continue"
+
+# Auto-save interval in seconds (300-3600)
+SAVE_INTERVAL="300"
+
+# Initialization type (New, Continue, Load)
+INIT_TYPE="New"
+
+# Slot number for save file (1-5)
+SLOT="1"
+
+# ===========================================
+# GAME MODE & DIFFICULTY
+# ===========================================
+
+# Game mode (Standard, Creative, Peaceful, Hard)
+GAME_MODE="Standard"
+
+# Difficulty level (Peaceful, Normal, Hard)
+DIFFICULTY="Normal"
+
+# Custom game mode mask (0 = default settings)
+CUSTOM_GAME_MODE_MASK="0"
+
+# ===========================================
+# WORLD MECHANICS
+# ===========================================
+
+# Enable tree regrowth (true/false)
+ENABLE_TREE_REGROWTH="true"
+
+# Tree regrowth mode (0=Off, 1=10%, 2=25%, 3=50%, 4=100%)
+TREE_REGROWTH_MODE="2"
+
+# Enable autosave when players sleep (true/false)
+ENABLE_AUTOSAVE_ON_SLEEP="true"
+
+# Skip networking tutorial (true/false)
+SKIP_NETWORKING_TUTORIAL="true"
+
+# ===========================================
+# PERFORMANCE SETTINGS
+# ===========================================
+
+# Target FPS when server is idle (5-30)
+TARGET_FPS_IDLE="10"
+
+# Target FPS when server is active (30-120)
+TARGET_FPS_ACTIVE="60"
+
+# ===========================================
+# SERVER INFORMATION
+# ===========================================
+
+# Server contact information
+SERVER_CONTACT="admin@myserver.com"
+
+# Server description
+SERVER_DESCRIPTION="A friendly survival server with tree regrowth enabled!"
+
+# Server tags (comma-separated)
+SERVER_TAGS="survival,friendly,pve"
+
+# Show server logs (true/false)
+SHOW_LOGS="true"
+
+# ===========================================
+# SYSTEM SETTINGS
+# ===========================================
+
+# User to run the server as
+FOREST_USER="forest"
+
+# Server installation directory
+SERVER_DIR="/home/forest/forest-server"
+
+# SteamCMD directory
+STEAMCMD_DIR="/home/forest/steamcmd"
+
+# Service name
+SERVICE_NAME="forest-server"
+
+# Steam App ID for The Forest
+STEAM_APP_ID="556450"
+
+# ===========================================
+# ADVANCED SETTINGS
+# ===========================================
+
+# Enable automatic backups (true/false)
+ENABLE_AUTO_BACKUP="true"
+
+# Backup interval in hours (1-24)
+BACKUP_INTERVAL="4"
+
+# Number of backups to keep (1-50)
+BACKUP_RETENTION="15"
+
+# Backup directory
+BACKUP_DIR="/home/forest/backups"
+
+# ===========================================
+# FIREWALL SETTINGS
+# ===========================================
+
+# Enable automatic firewall configuration (true/false)
+CONFIGURE_FIREWALL="true"
+
+# Additional ports to open (space-separated)
+ADDITIONAL_PORTS=""
+
+# ===========================================
+# LOGGING SETTINGS
+# ===========================================
+
+# Log level (DEBUG, INFO, WARN, ERROR)
+LOG_LEVEL="INFO"
+
+# Enable log rotation (true/false)
+ENABLE_LOG_ROTATION="true"
+
+# Maximum log file size in MB (1-1000)
+MAX_LOG_SIZE="50"
+
+# Number of log files to keep (1-20)
+LOG_RETENTION="10"
